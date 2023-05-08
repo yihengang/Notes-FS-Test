@@ -1,28 +1,39 @@
 const notesRouter = require("express").Router()
 const Note = require("../models/note")
+const mongoose = require("mongoose")
 
-notesRouter.get("/", (request, response) => {
-  Note.find({}).then((notes) => {
-    response.json(notes)
-  })
+// const note = new Note({
+//   content: "Cason is going to finish chapter four before heading back",
+//   important: true,
+// })
+
+// note.save().then((result) => {
+//   console.log("note saved!")
+//   console.log(result)
+//if connection not closed, program will never finish its execution
+// mongoose.connection.close()
+// })
+
+notesRouter.get("/", async (request, response) => {
+  const notes = await Note.find({})
+  response.json(notes)
 })
 
-notesRouter.get("/:id", (request, response, next) => {
+notesRouter.get("/:id", async (request, response, next) => {
   //using Mongoose's findById method
-  Note.findById(request.params.id)
-    .then((note) => {
-      if (note) {
-        response.json(note)
-      } else {
-        response.status(404).end()
-      }
-    })
-    .catch((error) => {
-      next(error)
-    })
+  try {
+    const note = await Note.findById(request.params.id)
+    if (note) {
+      response.json(note)
+    } else {
+      response.status(404).end()
+    }
+  } catch (exception) {
+    next(exception)
+  }
 })
 
-notesRouter.post("/", (request, response, next) => {
+notesRouter.post("/", async (request, response, next) => {
   const noteFromBody = request.body
 
   //this conditional statement not included in the course note
@@ -35,20 +46,21 @@ notesRouter.post("/", (request, response, next) => {
     important: noteFromBody.important || false,
   })
 
-  newNote
-    .save()
-    .then((savedNote) => {
-      response.json(savedNote)
-    })
-    .catch((error) => next(error))
+  try {
+    const savedNote = await newNote.save()
+    response.status(201).json(savedNote)
+  } catch (exception) {
+    next(exception)
+  }
 })
 
-notesRouter.delete("/:id", (request, response, next) => {
-  Note.findByIdAndRemove(request.params.id)
-    .then((result) => {
-      response.status(204).end()
-    })
-    .catch((error) => next(error))
+notesRouter.delete("/:id", async (request, response, next) => {
+  try {
+    await Note.findByIdAndRemove(request.params.id)
+    response.status(204).end()
+  } catch (exception) {
+    next(exception)
+  }
 })
 
 notesRouter.put("/:id", (request, response, next) => {
